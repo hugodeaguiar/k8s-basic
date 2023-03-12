@@ -1,0 +1,46 @@
+version: "3.3"
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+
+  redis:
+    image: "redis:6.2-alpine"
+
+  php:
+    build: .
+    links:
+      - db
+      - opensearch
+      - redis
+    depends_on:
+      - db
+      - opensearch
+      - redis
+
+  db:
+    image: mariadb:10.4
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: example
+
+  opensearch:
+    image: opensearchproject/opensearch:1.2.4
+    container_name: opensearch
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    ports:
+      - 9200:9200
+      - 9600:9600
